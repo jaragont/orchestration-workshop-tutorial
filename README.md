@@ -4,7 +4,7 @@
 
 Welcome to the workshop's implementation repository, here you will find the solutions and incremental code required for all parts.
 
-0. Fork this repository.
+0. Fork this repository including all the branches.
 1. Ensure you first setup your environment as per the [instructions](https://jaragont.github.io/orchestration-workshop/pages/env-setup/).
 2. Follow along the instructors to try to explore the functionality.
 3. If you fall behind, you can always checkout the `part-x` branch.
