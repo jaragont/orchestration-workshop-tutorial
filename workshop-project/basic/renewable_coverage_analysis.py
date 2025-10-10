@@ -71,7 +71,7 @@ def _define_fossil_and_renewable_coverage(
     """
     Estimate the fossil and renewable energy consumption in GWH.
     """
-    return energy_consumption_df.merge(
+    energy_coverage = energy_consumption_df.merge(
         renewable_energy_df, how="left", on=["entity", "entity_code", "year"]
     ).assign(
         renewable_energy_pct=lambda x: x["renewable_energy_pct"].fillna(0),
@@ -81,6 +81,13 @@ def _define_fossil_and_renewable_coverage(
         fossil_energy_consumption_gwh=lambda x: x["energy_consumption_gwh"]
         * x["fossil_energy_pct"],
     )
+
+    # QC logic mixed in - this is the problem!
+    tolerance = 1e-6
+    total_pct = energy_coverage['fossil_energy_pct'] + energy_coverage['renewable_energy_pct']
+    assert abs(total_pct - 1.0).max() < tolerance, "Energy percentages don't sum to 1!"
+    print("Energy percentages sum to 1 within tolerance.")
+    return energy_coverage
 
 
 def _add_population_data_to_energy_breakdown(
@@ -138,7 +145,7 @@ def _compute_per_capita_energy_consumption(
     """
     Compute the per-capita consumption per type across the provided geographic entities.
     """
-    return energy_breakdowns_with_population_df.assign(
+    energy_consumption = energy_breakdowns_with_population_df.assign(
         energy_consumption_per_capita_gwh=lambda x: x["energy_consumption_gwh"]
         / x["population"],
         renewable_energy_per_capita_gwh=lambda x: x["renewable_energy_consumption_gwh"]
@@ -146,6 +153,12 @@ def _compute_per_capita_energy_consumption(
         fossil_energy_per_capita_gwh=lambda x: x["fossil_energy_consumption_gwh"]
         / x["population"],
     )
+
+    # More scattered assertions
+    max_threshold = 0.1  # 0.1 GWh per person per year ≈ 100 MWh
+    assert energy_consumption['energy_consumption_per_capita_gwh'].max() < max_threshold, "Per-capita too high!"
+    print("Energy per-capita within expected range.")
+    return energy_consumption
 
 
 # Load the data
@@ -182,128 +195,6 @@ all_entity_data = pd.concat(
 )
 
 # Compute per-capita metric
-per_capita_metrics = _compute_per_capita_energy_consumption(all_entity_data)
-
-import pandas as pd
-from openpyxl.chart import LineChart, Reference
-
-
-print(per_capita_metrics.head())
-# Find the latest year with population data
-latest_year = per_capita_metrics.loc[
-    per_capita_metrics["population"].notna(), "year"
-].max()
-
-filename = "energy_analysis_report.xlsx"
-with pd.ExcelWriter(filename, engine="openpyxl") as writer:
-    latest_year_with_population = per_capita_metrics.loc[
-        per_capita_metrics["population"].notna(), "year"
-    ].max()
-
-    # Remove invalid data
-    valid_energy_data = per_capita_metrics.loc[
-        lambda x: (
-            (x["renewable_energy_per_capita_gwh"].notna())
-            & (x["renewable_energy_per_capita_gwh"] != float("inf"))
-            & (x["fossil_energy_per_capita_gwh"].notna())
-            & (x["fossil_energy_per_capita_gwh"] != float("inf"))
-            & (x["energy_consumption_per_capita_gwh"].notna())
-            & (x["energy_consumption_per_capita_gwh"] != float("inf"))
-        )
-    ].reset_index()
-
-    # Tab 1: Top 10 Renewable Energy Consumers by Max Year
-    (
-        valid_energy_data.loc[
-            valid_energy_data.groupby("entity")[
-                "renewable_energy_per_capita_gwh"
-            ].idxmax()
-        ]
-        .nlargest(10, "renewable_energy_per_capita_gwh")[
-            ["entity", "year", "renewable_energy_per_capita_gwh"]
-        ]
-        .to_excel(writer, sheet_name="Top_10_Renewable_Max", index=False)
-    )
-
-    # Tab 2: Top 10 Fossil Energy Consumers by Max Year
-    (
-        valid_energy_data.loc[
-            valid_energy_data.groupby("entity")["fossil_energy_per_capita_gwh"].idxmax()
-        ]
-        .nlargest(10, "fossil_energy_per_capita_gwh")[
-            ["entity", "year", "fossil_energy_per_capita_gwh"]
-        ]
-        .to_excel(writer, sheet_name="Top_10_Fossil_Max", index=False)
-    )
-    # Tab 3: NAM vs IBERIA Comparison (past 10 years, pivoted by year)
-    past_10_years = latest_year_with_population - 9
-    nam_iberia_data = valid_energy_data.loc[
-        lambda x: (x["year"] >= past_10_years)
-        & (x["entity"].isin(["North America", "Iberia"]))
-    ][
-        [
-            "entity",
-            "year",
-            "renewable_energy_per_capita_gwh",
-            "fossil_energy_pct",
-            "energy_consumption_per_capita_gwh",
-        ]
-    ]
-
-    metric_labels = {
-        "renewable_energy_per_capita_gwh": "Renewable_Energy_Per_Capita",
-        "fossil_energy_pct": "Fossil_Energy_Percent",
-        "energy_consumption_per_capita_gwh": "Energy_per_Capita",
-    }
-
-    # Pivot data with years as rows and regions as columns
-    for metric in [
-        "renewable_energy_per_capita_gwh",
-        "fossil_energy_pct",
-        "energy_consumption_per_capita_gwh",
-    ]:
-        pivoted = nam_iberia_data.pivot(index="year", columns="entity", values=metric)
-        pivoted.to_excel(writer, sheet_name=metric_labels[metric])
-
-    # Add chart to Renewable Energy sheet as example
-    ws_renewable = writer.sheets["Renewable_Energy_Per_Capita"]
-    chart = LineChart()
-    chart.title = "NAM vs Iberia: Renewable Energy Per Capita Over Time"
-
-    # Get the data range (assuming years are in column A, regions in columns B and C)
-    max_row = (
-        len(
-            nam_iberia_data.pivot(
-                index="year",
-                columns="entity",
-                values="renewable_energy_per_capita_gwh",
-            )
-        )
-        + 1
-    )
-
-    # Add data for North America (column B)
-    data_nam = Reference(ws_renewable, min_col=2, min_row=1, max_row=max_row)
-    chart.add_data(data_nam, titles_from_data=True)
-
-    # Add data for Iberia (column C)
-    data_iberia = Reference(ws_renewable, min_col=3, min_row=1, max_row=max_row)
-    chart.add_data(data_iberia, titles_from_data=True)
-
-    # Set categories (years from column A)
-    categories = Reference(ws_renewable, min_col=1, min_row=2, max_row=max_row)
-    chart.set_categories(categories)
-
-    # Enable legend below the chart
-    chart.legend.position = "b"  # Position legend at bottom
-    chart.legend.overlay = False  # Don't overlay on chart area
-
-    # Add chart to worksheet
-    ws_renewable.add_chart(chart, "E2")
-
-    print(f"Excel report exported to: {filename}")
-
-    # Tab 4: Full raw data
-    per_capita_metrics.to_excel(writer, sheet_name="Raw_Data", index=False)
-
-print(f"Excel report exported to: {filename}")
+energy_breakdowns_with_percapita_consumption = _compute_per_capita_energy_consumption(
+    all_entity_data
+)
