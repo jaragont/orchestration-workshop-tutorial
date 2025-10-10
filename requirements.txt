@@ -1,0 +1,17 @@
+# Base part
+pandas
+# Dagster part
+create-dagster
+dagster
+dagster-webserver
+dagster-dg-cli
+dagster_pandera
+# Semantic checks
+pandera
+# Report
+openpyxl
+# Soda
+duckdb
+soda-core
+pyarrow
+soda-core-duckdb
