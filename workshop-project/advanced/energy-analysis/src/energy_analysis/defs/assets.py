@@ -207,7 +207,7 @@ def energy_conservation_check(energy_breakdown_with_new_regions):
 def export_analysis_report(energy_breakdown_per_capita):
     """Export analysis report to Excel with multiple tabs and charts"""
 
-    filename = "energy_analysis_report.xlsx"
+    filename = "/workspaces/orchestration-workshop-tutorial/energy_analysis_report.xlsx"
     with pd.ExcelWriter(filename, engine="openpyxl") as writer:
         latest_year_with_population = energy_breakdown_per_capita.loc[
             energy_breakdown_per_capita["population"].notna(), "year"
