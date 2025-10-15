@@ -1,10 +1,10 @@
 import pandas as pd
 
 # Load all datasets
-population_df = pd.read_csv("data/population-with-un-projections.csv")
-energy_df = pd.read_csv("data/primary-energy-cons.csv")
-renewable_df = pd.read_csv("data/renewable-share-energy.csv")
-taxonomy_df = pd.read_csv("data/regional-grouping.csv")
+population_df = pd.read_csv("/workspaces/orchestration-workshop-tutorial/data/population-with-un-projections.csv")
+energy_df = pd.read_csv("/workspaces/orchestration-workshop-tutorial/data/primary-energy-cons.csv")
+renewable_df = pd.read_csv("/workspaces/orchestration-workshop-tutorial/data/renewable-share-energy.csv")
+taxonomy_df = pd.read_csv("/workspaces/orchestration-workshop-tutorial/data/regional-grouping.csv")
 
 # Quick exploration
 print("Dataset shapes:")
