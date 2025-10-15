@@ -1,12 +1,11 @@
 import pandas as pd
 
-base_dir = "/workshop-repo"
 
 # Available data files
-csv_population = "data/population-with-un-projections.csv"
-csv_renewable_share = "data/renewable-share-energy.csv"
-csv_energy_consumption = "data/primary-energy-cons.csv"
-csv_regional_grouping = "data/regional-grouping.csv"
+csv_population = "/workspaces/orchestration-workshop-tutorial/data/population-with-un-projections.csv"
+csv_renewable_share = "/workspaces/orchestration-workshop-tutorial/data/renewable-share-energy.csv"
+csv_energy_consumption = "/workspaces/orchestration-workshop-tutorial/data/primary-energy-cons.csv"
+csv_regional_grouping = "/workspaces/orchestration-workshop-tutorial/data/regional-grouping.csv"
 
 
 def _prepare_population(df: pd.DataFrame) -> pd.DataFrame:
@@ -194,7 +193,7 @@ latest_year = per_capita_metrics.loc[
     per_capita_metrics["population"].notna(), "year"
 ].max()
 
-filename = "energy_analysis_report.xlsx"
+filename = "/workspaces/orchestration-workshop-tutorial/energy_analysis_report.xlsx"
 with pd.ExcelWriter(filename, engine="openpyxl") as writer:
     latest_year_with_population = per_capita_metrics.loc[
         per_capita_metrics["population"].notna(), "year"
