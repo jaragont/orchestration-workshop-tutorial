@@ -18,7 +18,7 @@ from energy_analysis.defs.models import (
 def population():
     """Population by country from UN projections"""
     return (
-        pd.read_csv("../../../../data/population-with-un-projections.csv")
+        pd.read_csv("/workspaces/orchestration-workshop-tutorialdata/population-with-un-projections.csv")
         .rename(
             columns={
                 "population__sex_all__age_all__variant_estimates": "population",
@@ -38,7 +38,7 @@ def population():
 def energy_consumption():
     """Energy consumption by country from UN projections"""
     return (
-        pd.read_csv("../../../../data/primary-energy-cons.csv")
+        pd.read_csv("/workspaces/orchestration-workshop-tutorialdata/primary-energy-cons.csv")
         .rename(
             columns={
                 "primary_energy_consumption__twh": "energy_consumption",
@@ -64,7 +64,7 @@ def energy_consumption():
 def renewable_coverage():
     """Renewable energy coverage by country from UN projections"""
     return (
-        pd.read_csv("../../../../data/renewable-share-energy.csv")
+        pd.read_csv("/workspaces/orchestration-workshop-tutorialdata/renewable-share-energy.csv")
         .rename(
             columns={
                 "renewables__pct_equivalent_primary_energy": "renewable_energy_pct",
@@ -82,7 +82,7 @@ def renewable_coverage():
 )
 def regional_grouping():
     """Regional grouping taxonomy"""
-    return pd.read_csv("../../../../data/regional-grouping.csv")
+    return pd.read_csv("/workspaces/orchestration-workshop-tutorialdata/regional-grouping.csv")
 
 
 @dg.asset(
